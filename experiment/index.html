@@ -1,0 +1,115 @@
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="js/javascript.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="css/style.css" type="text/css">
+    <title>Measure High Resistance by Leakage Method</title>
+</head>
+
+<body>
+    <div style="text-align: center;">X : <span id="mouseX"
+            style="border: 1px solid black; padding: 5px 20px; display: inline-block;">0</span> Y: <span id="mouseY"
+            style="border: 1px solid black; padding: 5px 20px; display: inline-block;">0</span>
+    </div>
+    <div class="container-fluid mt-4" style="height: 100vh;">
+        <h2 class="text-center">Measure High Resistance by Leakage Method</h2>
+        <div class="row" style="justify-content: left;">
+            <div class="col-xs-4 ml-5">
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_POINT" class="btn btn-primary">Point</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_TWO_WAY_KEY" class="btn btn-primary">Two Way Key</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_RESISTOR" class="btn btn-primary">Resistor</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_CELL" class="btn btn-primary">Battery</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_GALVANOMETER" class="btn btn-primary">Galvanometer</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_POTENTIOMETER" class="btn btn-primary">Potentiometer</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_CONDENSER" class="btn btn-primary">Condenser</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="DRAW_TAPKEY" class="btn btn-primary">Tap Key</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="MAKE_CONNECTION" class="btn btn-primary">Connection</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="RESET" class="btn btn-danger">Reset</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="STOP_SIMULATION" class="btn btn-warning">Power Off</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="START_SIMULATION" class="btn btn-success">Power On</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mt-2">
+                        <button vlab-action="UNDO" class="btn btn-secondary">Undo</button>
+                    </div>
+                    <div class="col mt-2">
+                        <button vlab-action="REDO" class="btn btn-secondary">Redo</button>
+                    </div>
+                </div>
+                <div class="row mt-4" style="height: max-content;">
+                    <div class="col pl-0 pr-0"
+                        style="border: 0px inset green; box-shadow: 0px 0px 20px #bbb; background-color: white;">
+                        <h4 class="text-center mb-0"
+                            style="background-color: black; color: white; box-shadow: 0px 3px 20px #bbb">Message</h4>
+                        <div id="terminal">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    
+                </div>
+            </div>
+            <div class="col-xs-8 ml-5" style="border: 0px inset green; box-shadow: 0px 0px 20px #bbb;">
+                <canvas id="myCanvas">
+
+                </canvas>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid mt-0">
+        <div class="row" style="background-color: white; box-shadow: 0px 0px 20px #bbb;">
+            khkhk
+        </div>
+    </div>
+    <div class="loader">
+        <div style=" position: absolute; top: 42%; left: 48.5%; transform: translate(-50%,-50%);">
+            <i class='layer'></i>
+            <i class='layer'></i>
+            <i class='layer'></i>
+        </div>
+        <div style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-20%);">Loading....</div>
+    </div>
+</body>
+
+</html>
