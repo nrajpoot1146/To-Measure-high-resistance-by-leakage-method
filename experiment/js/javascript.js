@@ -761,7 +761,6 @@ var StopWatch = function (x, y) {
     }
 }
 
-
 window.onload = function () {
     window.terminal = new Terminal();
     window.canvas = new this.Canvas("myCanvas");
