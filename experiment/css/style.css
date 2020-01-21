@@ -29,7 +29,7 @@ body {
 #terminal {
     background: rgba(48, 10, 36, 1);
     height: 356px;
-    box-sizing: border-box;
+    word-wrap: normal;
     color: white;
     font-family: terminalFont;
     letter-spacing: 3px;
@@ -46,6 +46,7 @@ body {
     user-select: text;
     /* Standard syntax */
     cursor: text;
+    width: 100%;
 }
 
 #terminal::-webkit-scrollbar {

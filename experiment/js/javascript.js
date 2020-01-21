@@ -63,20 +63,22 @@ var level = {
 
 var conMap = {
     Z: ["GA", "CA", "RA", "BA", "K3A"],
-    RA: ["Z"],
+    RA: ["Z", "BA"],
     CA: ["Z"],
     GA: ["Z", "K3A"],
     BA: ["Z"],
     K3A: ["GA", "Z"],
-    GB: ["K3I", "K1A"],
-    K3I: ["GB", "K1A", "K3A", "K3"],
-    K1A: ["GB", "K3I","K1I"],
-    K1I: ["CB", "K2I", "K1B","K1A"],
+    GB: ["K3I", "K4A"],
+    K4A: ["GB", "K3I"],
+    K4I: ["K1A", "K4", "K4A"],
+    K3I: ["GB", "K4A", "K3A", "K3"],
+    K1A: ["K4I", "K1I"],
+    K1I: ["CB", "K2I", "K1B", "K1A"],
     K2I: ["CB", "K1I", "K2A", "K2"],
     CB: ["K1I", "K2I"],
     K2A: ["RB"],
     RB: ["K2A"],
-    K1B: ["BB","K1I"],
+    K1B: ["BB", "K1I"],
     BB: ["K1B"]
 }
 
@@ -107,10 +109,15 @@ var point = function (canvasId, imageId, x, y, r, type, name, element) {
         }
     };
     this.isInside = function (x, y) {
-        var d = Math.pow(x - this.point.x, 2) + Math.pow(y - this.point.y, 2)
-        d = Math.sqrt(d);
-        if (d <= parseFloat(this.point.r)) {
-            return true;
+        if (canvas.action != operationType.START_SIMULATION) {
+            var d = Math.pow(x - this.point.x, 2) + Math.pow(y - this.point.y, 2)
+            d = Math.sqrt(d);
+            var temp = canvas.action;
+            if (d <= parseFloat(this.point.r)) {
+                canvas.action = operationType.MAKE_CONNECTION;
+                return true;
+            }
+            canvas.action = temp;
         }
         return false;
     };
@@ -130,20 +137,21 @@ var Wire = function (a, b, tilt) {
     this.current = 0;
     this.tilt = tilt;
     this.color = null;
+    this.flag = false;
 
     this.draw = function () {
-        var flag = conMap[this.a.device == null ? this.a.name : this.a.device.name + this.a.name].includes(this.b.device == null ? this.b.name : this.b.device.name + this.b.name);
-        if (flag)
+        this.flag = conMap[this.a.device == null ? this.a.name : this.a.device.name + this.a.name].includes(this.b.device == null ? this.b.name : this.b.device.name + this.b.name);
+        if (this.flag)
             this.color = "green";
         else {
             this.color = "red";
-            terminal.update("wrong connection");
+            terminal.update("wrong connection use 'ctrl+z' to undo");
         }
 
         canvas.context.beginPath();
         canvas.context.strokeStyle = this.color;
         //canvas.context.fill("grey");
-        canvas.context.lineWidth = 5;
+        canvas.context.lineWidth = 3;
         canvas.context.moveTo(this.a.point.x, this.a.point.y);
         if (this.tilt) {
             canvas.context.lineTo(this.a.point.x, this.b.point.y);
@@ -244,8 +252,8 @@ var TapKey = function (x, y, name) {
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
     this.input = new point(canvas.id, null, this.x + 40, this.y + 25, 4, pointType.PASSIVE, "I", this);
-    this.outputB = new point(canvas.id, null, this.x + 10, this.y + 10, 0, pointType.PASSIVE, "", this);
-    this.outputA = new point(canvas.id, null, this.x + 10, this.y + 40, 4, pointType.PASSIVE, "A", this);
+    this.outputB = new point(canvas.id, null, this.x + 20, this.y + 5, 0, pointType.PASSIVE, "", this);
+    this.outputA = new point(canvas.id, null, this.x + 10, this.y + 25, 4, pointType.PASSIVE, "A", this);
     this.output = this.outputB;
     this.Wire = null;
     this.name = name;
@@ -301,12 +309,12 @@ var TapKey = function (x, y, name) {
 var Cell = function (x, y, name) {
     this.width = 80;
     this.height = 30;
-    this.V = 12;
+    this.V = 20;
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
     this.A = new point(canvas.id, null, this.x + 3, this.y + this.height / 2, 5, pointType.ACTIVE, "A", this);
     this.B = new point(canvas.id, null, this.x - 3 + this.width, this.y + this.height / 2, 5, pointType.ACTIVE, "B", this);
-    this.A.V = 12;
+    this.A.V = this.V;
     this.B.V = 0;
     this.name = name;
     this.draw = function () {
@@ -431,6 +439,8 @@ var Galvanometer = function (x, y, name) {
         canvas.context.rect(this.x + 7.5, this.y, this.width - 15, this.height);
         canvas.context.lineWidth = "1";
         canvas.context.strokeStyle = "black";
+        canvas.context.fillStyle = "#CFD2CF";
+        canvas.context.fillRect(this.x + 7.5, this.y, this.width - 15, this.height);
         canvas.context.stroke();
         canvas.context.closePath();
 
@@ -444,15 +454,15 @@ var Galvanometer = function (x, y, name) {
 
         this.A.draw();
         this.B.draw();
-        this.update();
+        //this.update();
     }
     this.isInside = function () {
 
     }
-    this.update = function () {
-        let value = this.A.V - this.B.V;
+    this.update = function (value) {
+        //let value = this.A.V - this.B.V;
         this.value = value;
-        //canvas.draw();
+        canvas.draw();
     }
     this.operate = function () {
         this.update();
@@ -513,7 +523,7 @@ var Condenser = function (x, y, name) {
     this.isInside = function () {
 
     }
-    this.charge = function () {
+    this.charge = function (t) {
         if (this.A.V > this.B.V) {
             let Vs = this.A.V - this.B.V;
             this.V = Vs * Math.pow(2.7183, -(15 / (this.R * this.C)));
@@ -526,20 +536,14 @@ var Condenser = function (x, y, name) {
     }
 };
 
-var Canvas = function () {
-    this.elementCount = {
-
-    }
-    this.id = "myCanvas";
+var Canvas = function (id) {
+    this.id = id;
     this.obj = document.getElementById(this.id);
-    this.width = window.innerWidth
-        || document.documentElement.clientWidth
-        || document.body.clientWidth;
-    this.height = h = window.innerHeight
-        || document.documentElement.clientHeight
-        || document.body.clientHeight;
-    this.obj.setAttribute("width", this.width * 0.7);
-    this.obj.setAttribute("height", this.height * 0.8);
+    this.parent = this.obj.parentElement;
+    this.width = this.parent.clientWidth;
+    this.height = this.parent.clientHeight;
+    this.obj.setAttribute("width", this.width);
+    this.obj.setAttribute("height", this.height);
     this.context = this.obj.getContext('2d');
     this.element = [];
     this.connection = [];
@@ -557,18 +561,23 @@ var Canvas = function () {
         for (var con in this.connection) {
             this.connection[con].draw();
         }
+        //if(canvas.isDraw)
+        canvas.stopWatch.draw();
     }
     this.reset = function () {
         this.element = [];
         this.connection = [];
+        canvas.element.push(new point(canvas.id, null, 220, 300, 8, pointType.PASSIVE, "Z", null));
         this.draw();
         terminal.update("Reset Done..");
     }
     this.undo = function () {
         if (canvas.element.length > 0) {
-            canvas.redoArray.push(canvas.element.pop());
-            canvas.draw();
-            terminal.update("Undo Done..");
+            if (!(canvas.element[canvas.element.length - 1] instanceof point)) {
+                canvas.redoArray.push(canvas.element.pop());
+                canvas.draw();
+                terminal.update("Undo Done..");
+            }
         }
     }
     this.redo = function () {
@@ -581,7 +590,7 @@ var Canvas = function () {
 
     this.start = function () {
 
-        if (canvas.element.length == 19) {
+        if (this.isCorrect() && canvas.element.length == 21) {
             for (let i = 0; i < buttons.length; i++) {
                 if (operationType[buttons[i].getAttribute("vlab-action")] == operationType.STOP_SIMULATION) {
                     buttons[i].classList.remove("disabled");
@@ -592,11 +601,14 @@ var Canvas = function () {
                 buttons[i].setAttribute("disabled", "true");
             }
 
-            this.run();
+            this.timeInterval = setInterval(this.run, 500);
+            canvas.stopWatch.isDraw = true;
             terminal.update("Simulation Started");
+            this.action = operationType.START_SIMULATION;
         }
     }
     this.stop = function () {
+        //if (canvas.action == operationType.START_SIMULATION) {
         for (let i = 0; i < buttons.length; i++) {
             if (operationType[buttons[i].getAttribute("vlab-action")] == operationType.STOP_SIMULATION) {
                 buttons[i].classList.add("disabled");
@@ -608,23 +620,153 @@ var Canvas = function () {
         }
         terminal.update("Simulation Stopped");
         clearInterval(this.timeInterval);
-        timeInterval = null;
+        canvas.stopWatch.isDraw = false;
+        this.timeInterval = null;
+        //}
     }
 
     this.run = function () {
-        runnable();
+        if (canvas.twoWayKey.output == canvas.twoWayKey.outputA) {
+            //k1 A
+            if (canvas.tapKey_3.output == canvas.tapKey_3.outputA) {
+                canvas.stopWatch.stop();
+                //K4 A
+                if (canvas.tapKey_2.output == canvas.tapKey_2.outputA) {
+                    //K3 A
+                    canvas.condenser.V = 0;
+                    canvas.galvanometer.update(canvas.condenser.V);
+                } else {
+                    //K3 B 
+                    canvas.galvanometer.update(canvas.condenser.V);
+                }
+            } else {
+                //K4 B
+                if (canvas.tapKey_1.output == canvas.tapKey_1.outputA) {
+                    //K2 A
+                    canvas.stopWatch.reStart();
+                    //discharge through leakage resistor
+
+                } else {
+                    //K2 B
+                    //discharge through leakage resistor
+                    canvas.stopWatch.stop();
+                }
+            }
+        } else {
+            //K1 B
+            if (canvas.tapKey_1.output == canvas.tapKey_1.outputA) {
+                //K2 A
+                //charge with leakage resistor
+
+            } else {
+                //K2 B
+                canvas.stopWatch.reStart();
+                canvas.condenser.V = canvas.battery.V;
+            }
+        }
+
+    }
+
+    this.isCorrect = function () {
+        var count = 0;
+        var flag = true;
+        for (let i = 0; i < canvas.element.length; i++) {
+            if (canvas.element[i] instanceof Wire) {
+                count++;
+                flag = flag && canvas.element[i].flag;
+            }
+        }
+        return ((count == 12) && flag);
+    }
+    this.onResize = function () {
+        canvas.width = canvas.parent.clientWidth;
+        canvas.height = canvas.parent.clientHeight;
+        canvas.obj.setAttribute("width", canvas.width);
+        canvas.obj.setAttribute("height", canvas.height);
     }
 };
 
-var runnable = function () {
+var StopWatch = function (x, y) {
+    this.width = 100;
+    this.height = 40;
+    this.x = x;
+    this.y = y;
+    this.s = 0;
+    this.ms = 0;
+    this.isStart = false;
+    this.isDraw = false;
+    this.time = null;
+    this.timeInterval = null;
+    this.draw = function () {
+        if (this.s % 2 == 0)
+            this.time = (this.s < 10 ? "0" + this.s : this.s) + ":" + (this.ms < 10 ? "0" + this.ms : this.ms);
+        else
+            this.time = (this.s < 10 ? "0" + this.s : this.s) + " " + (this.ms < 10 ? "0" + this.ms : this.ms);
+        canvas.context.clearRect(this.x, this.y, this.width, this.height);
+        canvas.context.beginPath();
+        canvas.context.rect(this.x, this.y, this.width, this.height);
+        canvas.context.strokeStyle = "black";
+        canvas.context.fillStyle = "#CFD2CF";
+        canvas.context.fillRect(this.x, this.y, this.width, this.height);
+        canvas.context.lineWidth = 2;
+        canvas.context.stroke();
+        canvas.context.closePath();
 
-    canvas.draw();
+        canvas.context.font = "30px digitalFont";
+        canvas.context.fillStyle = "gray";
+        canvas.context.fillText(this.time, this.x + this.width / 2 - 30, this.y + this.height / 2 + 10);
+
+        canvas.context.font = "20px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText("Stopwatch :", this.x + this.width / 2 - 170, this.y + this.height / 2 + 5);
+
+        canvas.context.font = "20px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText("SS:MS", this.x + this.width / 2 - 30, this.y + this.height / 2 + 40);
+    }
+    this.reset = function () {
+        this.ms = 0;
+        this.s = 0;
+    }
+    this.start = function () {
+        if (!this.isStart) {
+            this.isStart = true;
+            this.timeInterval = setInterval(this.operate, 10);
+        } else {
+            terminal.update("Stopwatch is already running.");
+        }
+    }
+    this.stop = function () {
+        if (this.isStart) {
+            this.isStart = false;
+            clearInterval(this.timeInterval);
+        }
+    }
+    this.reStart = function () {
+        if (!this.isStart) {
+            this.reset();
+            this.start();
+        }
+    }
+    this.operate = function () {
+        canvas.stopWatch.ms += 1;
+        if (canvas.stopWatch.ms == 100) {
+            canvas.stopWatch.s++;
+            canvas.stopWatch.ms = 0;
+            if (canvas.stopWatch.s == 60) {
+                canvas.stopWatch.s = 0;
+            }
+        }
+        canvas.stopWatch.draw();
+    }
 }
+
 
 window.onload = function () {
     window.terminal = new Terminal();
-    window.canvas = new this.Canvas();
+    window.canvas = new this.Canvas("myCanvas");
     window.buttons = this.document.getElementsByClassName("btn");
+    canvas.stopWatch = new this.StopWatch(1000, 35);
     canvas.stop();
     this.document.addEventListener("mousedown", function (e) {
         var tempPos = getMousePos(window.canvas.obj, e);
@@ -677,7 +819,6 @@ window.onload = function () {
                     canvas.action = operationType.MAKE_CONNECTION;
                     break;
                 case operationType.START_SIMULATION:
-                    canvas.action = operationType.START_SIMULATION;
                     canvas.start();
                     break;
                 case operationType.STOP_SIMULATION:
@@ -712,10 +853,23 @@ window.onload = function () {
         }
     }
 
+    for (let i = 0; i < 8; i++) {
+        if (i == 5)
+            continue;
+        canvas.action = i;
+        this.mouseLeftDown(3, 3);
+        //canvas.action = this.operationType[i]
+    }
+
     document.getElementsByClassName("loader")[0].style.display = "none";
     canvas.element.push(new point(canvas.id, null, 220, 300, 8, pointType.PASSIVE, "Z", null));
     canvas.draw();
 };
+
+window.onresize = function () {
+    canvas.onResize();
+    canvas.draw();
+}
 
 function mouseLeftDown(x, y) {
     if (x > 0 && y > 0) {
@@ -758,9 +912,11 @@ function mouseLeftDown(x, y) {
         } else if (canvas.action == operationType.DRAW_TAPKEY) {
             if (!checkInstance(TapKey)) {
                 canvas.tapKey_1 = new TapKey(548, 365, "K2");
-                canvas.tapKey_2 = new TapKey(448, 217, "K3")
+                canvas.tapKey_2 = new TapKey(448, 217, "K3");
+                canvas.tapKey_3 = new TapKey(550, 150, "K4");
                 canvas.element.push(canvas.tapKey_1);
                 canvas.element.push(canvas.tapKey_2);
+                canvas.element.push(canvas.tapKey_3);
                 canvas.redoArray = [];
             }
         }
@@ -969,28 +1125,20 @@ function checkInstance(name) {
 }
 
 function drawConnection(x, y, ele) {
-    if (!(ele instanceof point)) {
-        return;
-    }
-    if (preCon == null) {
-        preCon = ele;
-    } else if (preCon != ele) {
-        var temp = new Wire(preCon, ele, true);
-        canvas.element.push(temp);
-        preCon.connection.push(temp);
-        ele.connection.push(temp);
-        preCon = null;
-    }
-}
-
-function WireCount() {
-    var count = 0;
-    for (let i = 0; i < canvas.element.length; i++) {
-        if (canvas.element[i] instanceof Wire) {
-            count++;
+    if (canvas.action != operationType.START_SIMULATION) {
+        if (!(ele instanceof point)) {
+            return;
+        }
+        if (preCon == null) {
+            preCon = ele;
+        } else if (preCon != ele && ((preCon.device != null && ele.device != null) ? (preCon.device.name != ele.device.name) : 1)) {
+            var temp = new Wire(preCon, ele, true);
+            canvas.element.push(temp);
+            preCon.connection.push(temp);
+            ele.connection.push(temp);
+            preCon = null;
         }
     }
-    return count;
 }
 
 function poinHoverCircle(x, y, r) {
