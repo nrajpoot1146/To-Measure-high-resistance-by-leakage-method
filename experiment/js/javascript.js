@@ -25,7 +25,6 @@ var getMousePos = function (canvas, e) {
     var boundingClientRect = canvas.getBoundingClientRect();
     var tx = e.clientX - boundingClientRect.left;
     var ty = e.clientY - boundingClientRect.top;
-    console.log(boundingClientRect.left);
     return {
         x: tx < 0 ? 0 : tx,
         y: ty < 0 ? 0 : ty
@@ -62,7 +61,26 @@ var level = {
     HIGH: true
 };
 
-var point = function (canvasId, imageId, x, y, r, type, name) {
+var conMap = {
+    Z: ["GA", "CA", "RA", "BA", "K3A"],
+    RA: ["Z"],
+    CA: ["Z"],
+    GA: ["Z", "K3A"],
+    BA: ["Z"],
+    K3A: ["GA", "Z"],
+    GB: ["K3I", "K1A"],
+    K3I: ["GB", "K1A", "K3A", "K3"],
+    K1A: ["GB", "K3I","K1I"],
+    K1I: ["CB", "K2I", "K1B","K1A"],
+    K2I: ["CB", "K1I", "K2A", "K2"],
+    CB: ["K1I", "K2I"],
+    K2A: ["RB"],
+    RB: ["K2A"],
+    K1B: ["BB","K1I"],
+    BB: ["K1B"]
+}
+
+var point = function (canvasId, imageId, x, y, r, type, name, element) {
     this.name = name;
     this.connection = [];
     this.V = 0;
@@ -70,6 +88,7 @@ var point = function (canvasId, imageId, x, y, r, type, name) {
     this.level = level.LOW;
     this.image = imageId;
     this.point = { x: x, y: y, r: r };
+    this.device = element;
     this.draw = function () {
         if (this.image == null) {
             canvas.context.beginPath();
@@ -84,7 +103,7 @@ var point = function (canvasId, imageId, x, y, r, type, name) {
             canvas.context.fillText(name, this.point.x - 10, this.point.y - 12);
 
             canvas.context.font = "12px Arial";
-            canvas.context.fillText(this.V, this.point.x - 10, this.point.y + 22);
+            //canvas.context.fillText(this.V, this.point.x - 10, this.point.y + 22);
         }
     };
     this.isInside = function (x, y) {
@@ -104,36 +123,23 @@ var point = function (canvasId, imageId, x, y, r, type, name) {
     }
 };
 
-var wire = function (a, b, tilt) {
-    if (a.type == pointType.ACTIVE) {
-        this.a = a;
-        this.b = b;
-    } else if (b.type == pointType.ACTIVE) {
-        this.a = b;
-        this.b = a;
-    } else if (a.V >= b.V) {
-        this.a = a;
-        this.b = b;
-    } else {
-        this.a = b;
-        this.b = a;
-    }
-    this.b.V = this.a.V;
+var Wire = function (a, b, tilt) {
+    this.a = a;
+    this.b = b;
+
     this.current = 0;
     this.tilt = tilt;
     this.color = null;
+
     this.draw = function () {
-        // var flag = false;
-        // for (var i in conMap[p.a.name]) {
-        //     flag = flag || (p.b.name == conMap[p.a.name][i]);
-        // }
-        // if (flag)
-        //     p.color = wireColor[p.a.value];
-        // else {
-        //     p.color = "red";
-        //     showMsg("wrong connection");
-        // }
-        this.color = "green";
+        var flag = conMap[this.a.device == null ? this.a.name : this.a.device.name + this.a.name].includes(this.b.device == null ? this.b.name : this.b.device.name + this.b.name);
+        if (flag)
+            this.color = "green";
+        else {
+            this.color = "red";
+            terminal.update("wrong connection");
+        }
+
         canvas.context.beginPath();
         canvas.context.strokeStyle = this.color;
         //canvas.context.fill("grey");
@@ -160,18 +166,33 @@ var wire = function (a, b, tilt) {
         canvas.context.stroke();
         canvas.context.closePath();
     }
+
+    this.operate = function () {
+        if (this.a.type == pointType.ACTIVE && this.b.type != pointType.ACTIVE) {
+            this.b.V = this.a.V;
+        } else if (this.b.type == pointType.ACTIVE && this.a.type != pointType.ACTIVE) {
+            this.a.V = this.b.V;
+        } else if (this.a.type == this.b.type) {
+            if (this.a.V > this.b.V) {
+                this.a.V = this.a.V;
+            } else {
+                this.b.V = this.a.V;
+            }
+        }
+    }
 };
 
-var twoWayKey = function (x, y) {
+var TwoWayKey = function (x, y, name) {
     this.width = 50;
     this.height = 50;
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
-    this.input = new point(canvas.id, null, this.x + 40, this.y + 25, 4, pointType.PASSIVE, "TI");
-    this.outputA = new point(canvas.id, null, this.x + 10, this.y + 10, 4, pointType.PASSIVE, "TA");
-    this.outputB = new point(canvas.id, null, this.x + 10, this.y + 40, 4, pointType.PASSIVE, "TB");
+    this.input = new point(canvas.id, null, this.x + 10, this.y + 25, 4, pointType.PASSIVE, "I", this);
+    this.outputA = new point(canvas.id, null, this.x + 40, this.y + 10, 4, pointType.PASSIVE, "A", this);
+    this.outputB = new point(canvas.id, null, this.x + 40, this.y + 40, 4, pointType.PASSIVE, "B", this);
     this.output = this.outputA;
-    this.wire = null;
+    this.Wire = null;
+    this.name = name;
     this.draw = function () {
         // canvas.context.beginPath();
         // canvas.context.rect(this.x, this.y, this.width, this.height);
@@ -179,8 +200,12 @@ var twoWayKey = function (x, y) {
         // canvas.context.stroke();
         // canvas.context.closePath();
 
-        this.wire = new wire(this.input, this.output, false);
-        this.wire.draw();
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
+
+        this.Wire = new Wire(this.input, this.output, false);
+        this.Wire.draw();
 
         this.input.draw();
         this.outputA.draw();
@@ -213,16 +238,18 @@ var twoWayKey = function (x, y) {
     };
 };
 
-var TapKey = function (x, y) {
+var TapKey = function (x, y, name) {
     this.width = 50;
     this.height = 50;
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
-    this.input = new point(canvas.id, null, this.x + 40, this.y + 25, 4, pointType.PASSIVE, "TI");
-    this.outputB = new point(canvas.id, null, this.x + 10, this.y + 10, 0, pointType.PASSIVE, "");
-    this.outputA = new point(canvas.id, null, this.x + 10, this.y + 40, 4, pointType.PASSIVE, "TA");
+    this.input = new point(canvas.id, null, this.x + 40, this.y + 25, 4, pointType.PASSIVE, "I", this);
+    this.outputB = new point(canvas.id, null, this.x + 10, this.y + 10, 0, pointType.PASSIVE, "", this);
+    this.outputA = new point(canvas.id, null, this.x + 10, this.y + 40, 4, pointType.PASSIVE, "A", this);
     this.output = this.outputB;
-    this.wire = null;
+    this.Wire = null;
+    this.name = name;
+    this.isOn = false;
     this.draw = function () {
         // canvas.context.beginPath();
         // canvas.context.rect(this.x, this.y, this.width, this.height);
@@ -230,8 +257,12 @@ var TapKey = function (x, y) {
         // canvas.context.stroke();
         // canvas.context.closePath();
 
-        this.wire = new wire(this.input, this.output, false);
-        this.wire.draw();
+        this.Wire = new Wire(this.input, this.output, false);
+        this.Wire.draw();
+
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
 
         this.input.draw();
         this.outputA.draw();
@@ -253,8 +284,11 @@ var TapKey = function (x, y) {
     this.click = function () {
         if (this.output == this.outputA) {
             this.output = this.outputB;
-        } else
+            this.isOn = false;
+        } else {
             this.output = this.outputA;
+            this.isOn = true;
+        }
         if (this.input.V > this.output.V) {
             this.output.V = this.input.V;
         } else {
@@ -264,16 +298,17 @@ var TapKey = function (x, y) {
     };
 };
 
-var Cell = function (x, y) {
+var Cell = function (x, y, name) {
     this.width = 80;
     this.height = 30;
     this.V = 12;
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
-    this.A = new point(canvas.id, null, this.x + 3, this.y + this.height / 2, 5, pointType.ACTIVE, "BA");
-    this.B = new point(canvas.id, null, this.x - 3 + this.width, this.y + this.height / 2, 5, pointType.ACTIVE, "BB");
+    this.A = new point(canvas.id, null, this.x + 3, this.y + this.height / 2, 5, pointType.ACTIVE, "A", this);
+    this.B = new point(canvas.id, null, this.x - 3 + this.width, this.y + this.height / 2, 5, pointType.ACTIVE, "B", this);
     this.A.V = 12;
     this.B.V = 0;
+    this.name = name;
     this.draw = function () {
         // canvas.context.beginPath();
         // canvas.context.rect(this.x, this.y, this.width, this.height);
@@ -320,6 +355,10 @@ var Cell = function (x, y) {
         canvas.context.stroke();
         canvas.context.closePath();
 
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
+
         this.A.draw();
         this.B.draw();
     };
@@ -328,16 +367,16 @@ var Cell = function (x, y) {
     }
 };
 
-var Resistor = function (x, y) {
+var Resistor = function (x, y, name) {
     this.width = 60;
     this.height = 10;
     this.x = x - (this.width - 20) / 2;
     this.y = y - this.height / 2;
 
     this.R = 0;
-
-    this.A = new point(canvas.id, null, this.x - 20, this.y + this.height / 2, 4, pointType.PASSIVE, "RA");
-    this.B = new point(canvas.id, null, this.x + 60, this.y + this.height / 2, 4, pointType.PASSIVE, "RB");
+    this.name = name;
+    this.A = new point(canvas.id, null, this.x - 20, this.y + this.height / 2, 4, pointType.PASSIVE, "A", this);
+    this.B = new point(canvas.id, null, this.x + 60, this.y + this.height / 2, 4, pointType.PASSIVE, "B", this);
 
     this.draw = function () {
         canvas.context.beginPath();
@@ -361,6 +400,10 @@ var Resistor = function (x, y) {
         canvas.context.stroke();
         canvas.context.closePath();
 
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
+
         this.A.draw();
         this.B.draw();
     }
@@ -369,7 +412,7 @@ var Resistor = function (x, y) {
     }
 };
 
-var Galvanometer = function (x, y) {
+var Galvanometer = function (x, y, name) {
     this.width = 90;
     this.height = 30;
     this.x = x - this.width / 2;
@@ -377,10 +420,11 @@ var Galvanometer = function (x, y) {
     this.value = "00";
     this.maxValue = 60;
     this.minValue = -60;
-    this.A = new point(canvas.id, null, this.x + 3, this.y + this.height / 2, 4, pointType.PASSIVE, "GA");
-    this.B = new point(canvas.id, null, this.x + this.width - 3, this.y + this.height / 2, 4, pointType.PASSIVE, "GB");
+    this.A = new point(canvas.id, null, this.x + 3, this.y + this.height / 2, 4, pointType.PASSIVE, "A", this);
+    this.B = new point(canvas.id, null, this.x + this.width - 3, this.y + this.height / 2, 4, pointType.PASSIVE, "B", this);
     this.A.V = 0;
     this.B.V = 0;
+    this.name = name;
     this.draw = function () {
 
         canvas.context.beginPath();
@@ -394,6 +438,10 @@ var Galvanometer = function (x, y) {
         canvas.context.fillStyle = "grey";
         canvas.context.fillText(this.value, this.x + this.width / 2 - 12, this.y + this.height / 2 + 9);
 
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
+
         this.A.draw();
         this.B.draw();
         this.update();
@@ -406,17 +454,24 @@ var Galvanometer = function (x, y) {
         this.value = value;
         //canvas.draw();
     }
+    this.operate = function () {
+        this.update();
+    }
 };
 
-var Potentiometer = function (x, y) {
+var Potentiometer = function (x, y, name) {
     this.width = 10;
     this.height = 10;
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
-    this.A = new point(canvas.id, null, this.x + 40, this.y + 25, 4, pointType.PASSIVE, "A");
-    this.O = new point(canvas.id, null, this.x + 10, this.y + 10, 4, pointType.ACTIVE_PASSIVE, "O");
-    this.B = new point(canvas.id, null, this.x + 10, this.y + 40, 4, pointType.PASSIVE, "B");
+    this.A = new point(canvas.id, null, this.x + 40, this.y + 25, 4, pointType.PASSIVE, "A", this);
+    this.O = new point(canvas.id, null, this.x + 10, this.y + 10, 4, pointType.ACTIVE_PASSIVE, "O", this);
+    this.B = new point(canvas.id, null, this.x + 10, this.y + 40, 4, pointType.PASSIVE, "B", this);
+    this.name = name;
     this.draw = function () {
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
         this.A.draw();
         this.O.draw();
         this.B.draw();
@@ -426,7 +481,7 @@ var Potentiometer = function (x, y) {
     }
 };
 
-var Condenser = function (x, y) {
+var Condenser = function (x, y, name) {
     this.width = 30;
     this.height = 30;
     this.x = x - this.width / 2;
@@ -437,8 +492,9 @@ var Condenser = function (x, y) {
     this.C = 30;
     this.V = 0;
 
-    this.A = new point(canvas.id, null, this.x, this.y + this.height / 2, 4, pointType.ACTIVE_PASSIVE, "CA");
-    this.B = new point(canvas.id, null, this.x + 28, this.y + this.height / 2, 4, pointType.ACTIVE_PASSIVE, "CB");
+    this.A = new point(canvas.id, null, this.x, this.y + this.height / 2, 4, pointType.ACTIVE_PASSIVE, "A", this);
+    this.B = new point(canvas.id, null, this.x + 28, this.y + this.height / 2, 4, pointType.ACTIVE_PASSIVE, "B", this);
+    this.name = name;
     this.draw = function () {
         canvas.context.beginPath();
         canvas.context.arc(this.x + this.width / 2, this.y + this.height / 2, this.r, 0, 2 * Math.PI);
@@ -446,6 +502,10 @@ var Condenser = function (x, y) {
         canvas.context.strokeStyle = "black";
         canvas.context.stroke();
         canvas.context.closePath();
+
+        canvas.context.font = "12px Arial";
+        canvas.context.fillStyle = "black";
+        canvas.context.fillText(name, this.x + this.width / 2 - 4, this.y + this.height / 2 + 30);
 
         this.A.draw();
         this.B.draw();
@@ -467,6 +527,9 @@ var Condenser = function (x, y) {
 };
 
 var Canvas = function () {
+    this.elementCount = {
+
+    }
     this.id = "myCanvas";
     this.obj = document.getElementById(this.id);
     this.width = window.innerWidth
@@ -483,6 +546,8 @@ var Canvas = function () {
     this.redoArray = [];
     this.action = null;
     this.currentElement = null;
+    this.timeInterval = null;
+    this.battery = "hdsjf";
     this.draw = function () {
         this.context.clearRect(0, 0, canvas.width, canvas.height);
         document.getElementsByTagName("body")[0].style.cursor = "default";
@@ -513,17 +578,23 @@ var Canvas = function () {
             terminal.update("Redo Done..");
         }
     }
+
     this.start = function () {
-        for (let i = 0; i < buttons.length; i++) {
-            if (operationType[buttons[i].getAttribute("vlab-action")] == operationType.STOP_SIMULATION) {
-                buttons[i].classList.remove("disabled");
-                buttons[i].removeAttribute("disabled");
-                continue;
+
+        if (canvas.element.length == 19) {
+            for (let i = 0; i < buttons.length; i++) {
+                if (operationType[buttons[i].getAttribute("vlab-action")] == operationType.STOP_SIMULATION) {
+                    buttons[i].classList.remove("disabled");
+                    buttons[i].removeAttribute("disabled");
+                    continue;
+                }
+                buttons[i].classList.add("disabled");
+                buttons[i].setAttribute("disabled", "true");
             }
-            buttons[i].classList.add("disabled");
-            buttons[i].setAttribute("disabled", "true");
+
+            this.run();
+            terminal.update("Simulation Started");
         }
-        terminal.update("Simulation Started")
     }
     this.stop = function () {
         for (let i = 0; i < buttons.length; i++) {
@@ -535,9 +606,20 @@ var Canvas = function () {
             buttons[i].classList.remove("disabled");
             buttons[i].removeAttribute("disabled");
         }
-        terminal.update("Simulation Stopped")
+        terminal.update("Simulation Stopped");
+        clearInterval(this.timeInterval);
+        timeInterval = null;
+    }
+
+    this.run = function () {
+        runnable();
     }
 };
+
+var runnable = function () {
+
+    canvas.draw();
+}
 
 window.onload = function () {
     window.terminal = new Terminal();
@@ -595,19 +677,21 @@ window.onload = function () {
                     canvas.action = operationType.MAKE_CONNECTION;
                     break;
                 case operationType.START_SIMULATION:
+                    canvas.action = operationType.START_SIMULATION;
                     canvas.start();
                     break;
                 case operationType.STOP_SIMULATION:
+                    canvas.action = operationType.STOP_SIMULATION;
                     canvas.stop();
                     break;
                 case operationType.RESET:
-                    canvas.reset();
+                    canvas.action != operationType.START_SIMULATION ? canvas.reset() : "";
                     break;
                 case operationType.UNDO:
-                    canvas.undo();
+                    canvas.action != operationType.START_SIMULATION ? canvas.undo() : "";
                     break;
                 case operationType.REDO:
-                    canvas.redo();
+                    canvas.action != operationType.START_SIMULATION ? canvas.redo() : "";
                     break;
                 default:
                     break;
@@ -615,13 +699,13 @@ window.onload = function () {
         }, false);
     }
 
-    window.onkeypress = function(e){
+    window.onkeypress = function (e) {
         switch (e.keyCode) {
             case 25:
-                canvas.redo();
+                canvas.action != operationType.START_SIMULATION ? canvas.redo() : "";
                 break;
             case 26:
-                canvas.undo();
+                canvas.action != operationType.START_SIMULATION ? canvas.undo() : "";
                 break;
             default:
                 break;
@@ -629,45 +713,67 @@ window.onload = function () {
     }
 
     document.getElementsByClassName("loader")[0].style.display = "none";
+    canvas.element.push(new point(canvas.id, null, 220, 300, 8, pointType.PASSIVE, "Z", null));
+    canvas.draw();
 };
 
 function mouseLeftDown(x, y) {
     if (x > 0 && y > 0) {
         if (canvas.action == operationType.DRAW_POINT) {
-            canvas.element.push(new point(canvas.id, null, x, y, 8, pointType.PASSIVE, ""));
-            canvas.redoArray = [];
+            //canvas.element.push(new point(canvas.id, null, 220, 300, 8, pointType.PASSIVE, ""));
+            //canvas.redoArray = [];
         } else if (canvas.action == operationType.MAKE_CONNECTION) {
             drawConnection(x, y, canvas.currentElement);
             canvas.redoArray = [];
         } else if (canvas.action == operationType.DRAW_TWO_WAY_KEY) {
-            var temp = new twoWayKey(x, y);
-            canvas.element.push(temp);
-            canvas.redoArray = [];
+            if (!checkInstance(TwoWayKey)) {
+                canvas.twoWayKey = new TwoWayKey(640, 301, "K1");
+                canvas.element.push(canvas.twoWayKey);
+                canvas.redoArray = [];
+            }
         } else if (canvas.action == operationType.DRAW_CELL) {
-            var temp = new Cell(x, y);
-            canvas.element.push(temp);
-            canvas.redoArray = [];
+            if (!checkInstance(Cell)) {
+                canvas.battery = new Cell(448, 500, "B");
+                canvas.element.push(canvas.battery);
+                canvas.redoArray = [];
+            }
         } else if (canvas.action == operationType.DRAW_RESISTOR) {
-            canvas.element.push(new Resistor(x, y));
-            canvas.redoArray = [];
+            if (!checkInstance(Resistor)) {
+                canvas.resistor = new Resistor(448, 380, "R");
+                canvas.element.push(canvas.resistor);
+                canvas.redoArray = [];
+            }
         } else if (canvas.action == operationType.DRAW_GALVANOMETER) {
-            var temp = new Galvanometer(x, y);
-            canvas.element.push(temp);
-            canvas.redoArray = [];
+            if (!checkInstance(Galvanometer)) {
+                canvas.galvanometer = new Galvanometer(448, 150, "G");
+                canvas.element.push(canvas.galvanometer);
+                canvas.redoArray = [];
+            }
         } else if (canvas.action == operationType.DRAW_POTENTIOMETER) {
-            canvas.element.push(new Potentiometer(x, y));
-            canvas.redoArray = [];
+            if (!checkInstance(Potentiometer)) {
+                canvas.potentiometer = new Potentiometer(x, y, "P")
+                canvas.element.push(canvas.potentiometer);
+                canvas.redoArray = [];
+            }
         } else if (canvas.action == operationType.DRAW_TAPKEY) {
-            canvas.element.push(new TapKey(x, y));
-            canvas.redoArray = [];
+            if (!checkInstance(TapKey)) {
+                canvas.tapKey_1 = new TapKey(548, 365, "K2");
+                canvas.tapKey_2 = new TapKey(448, 217, "K3")
+                canvas.element.push(canvas.tapKey_1);
+                canvas.element.push(canvas.tapKey_2);
+                canvas.redoArray = [];
+            }
         }
         else if (canvas.action == operationType.DRAW_CONDENSER) {
-            canvas.element.push(new Condenser(x, y));
-            canvas.redoArray = [];
+            if (!checkInstance(Condenser)) {
+                canvas.condenser = new Condenser(448, 300, "C");
+                canvas.element.push(canvas.condenser);
+                canvas.redoArray = [];
+            }
         }
 
         if (canvas.action == operationType.START_SIMULATION) {
-            if (canvas.currentElement instanceof twoWayKey) {
+            if (canvas.currentElement instanceof TwoWayKey) {
                 canvas.currentElement.click();
             } else if (canvas.currentElement instanceof TapKey) {
                 canvas.currentElement.click();
@@ -694,7 +800,7 @@ function hover(x, y) {
                 canvas.draw();
                 canvas.currentElement = null;
             }
-        } else if (canvas.element[ele] instanceof twoWayKey) {
+        } else if (canvas.element[ele] instanceof TwoWayKey) {
             if (canvas.element[ele].input.isInside(x, y)) {
                 canvas.currentElement = canvas.element[ele].input;
                 poinHoverCircle(canvas.currentElement.point.x, canvas.currentElement.point.y, 3);
@@ -853,6 +959,15 @@ function hover(x, y) {
     }
 }
 
+function checkInstance(name) {
+    for (let i = 0; i < canvas.element.length; i++) {
+        if (canvas.element[i] instanceof name) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function drawConnection(x, y, ele) {
     if (!(ele instanceof point)) {
         return;
@@ -860,12 +975,22 @@ function drawConnection(x, y, ele) {
     if (preCon == null) {
         preCon = ele;
     } else if (preCon != ele) {
-        var temp = new wire(preCon, ele, true);
+        var temp = new Wire(preCon, ele, true);
         canvas.element.push(temp);
         preCon.connection.push(temp);
         ele.connection.push(temp);
         preCon = null;
     }
+}
+
+function WireCount() {
+    var count = 0;
+    for (let i = 0; i < canvas.element.length; i++) {
+        if (canvas.element[i] instanceof Wire) {
+            count++;
+        }
+    }
+    return count;
 }
 
 function poinHoverCircle(x, y, r) {
