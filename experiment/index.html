@@ -1,27 +1,24 @@
 <html>
 
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
     <script src="js/graph.ob.js"></script>
-
     <script src="js/graph_line_use.ob.js"></script>
-    <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <script src="js/javascript.js" type="text/javascript"></script>
     <link rel="stylesheet" href="css/style.css" type="text/css">
     <title>Measure High Resistance by Leakage Method</title>
 </head>
 
 <body>
-    <div style="text-align: center;">X : <span id="mouseX"
+    <!-- <div style="text-align: center;">X : <span id="mouseX"
             style="border: 1px solid black; padding: 5px 20px; display: inline-block;">0</span> Y: <span id="mouseY"
             style="border: 1px solid black; padding: 5px 20px; display: inline-block;">0</span>
-    </div>
+    </div> -->
+    <h2 class="text-center" id="header-nav">Measure High Resistance by Leakage Method</h2>
     <div class="container-fluid mt-4">
-        <h2 class="text-center">Measure High Resistance by Leakage Method</h2>
         <div class="row" style="justify-content: left;">
             <div class="col-md-2 col-xl-2">
                 <div class="row">
@@ -148,6 +145,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="row mt-3 content-center">
+            <div class="col-md-2">
+                m = <input type="text" id="slop">
+            </div>
+            <div class="col-md-2">
+                R = <input type="text" id="final-R">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary" id="varify">Varify</button>
             </div>
         </div>
     </div>

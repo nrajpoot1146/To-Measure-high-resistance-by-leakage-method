@@ -3,8 +3,10 @@ var preCon = null;
 var update = function (x, y) {
     var tempX = document.getElementById("mouseX");
     var tempY = document.getElementById("mouseY");
-    tempX.innerHTML = x;
-    tempY.innerHTML = y;
+    if (tempX && tempY) {
+        tempX.innerHTML = x;
+        tempY.innerHTML = y;
+    }
 };
 
 var Terminal = function () {
@@ -568,7 +570,7 @@ var Canvas = function (id) {
     this.action = null;
     this.currentElement = null;
     this.timeInterval = null;
-    this.battery = "hdsjf";
+    this.battery = null;
     this.draw = function () {
         this.context.clearRect(0, 0, canvas.width, canvas.height);
         document.getElementsByTagName("body")[0].style.cursor = "default";
@@ -893,9 +895,9 @@ window.onload = function () {
             }
         }, false);
     }
-    document.getElementById("draw-graph").addEventListener("click",function(){
+    document.getElementById("draw-graph").addEventListener("click", function () {
         drawGraph();
-    },false);
+    }, false);
     window.onkeypress = function (e) {
         switch (e.keyCode) {
             case 25:
@@ -1305,7 +1307,7 @@ function init() {
 }
 
 function createTable() {
-    var str = "<h3 class='text-center'>Datatable</h3>"; 
+    var str = "<h3 class='text-center'>Datatable</h3>";
     str += "<table>";
     str += "<tr><th>Sr No.</th><th>First Deflection<br>(&theta;<sub>0</sub>)</th><th>Time <br>(t)</th><th>Deflection After Discharging<br>(&theta;<sub>t</sub>)<br> </th><th>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th><th>log<sub>10</sub>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th></tr>";
     var table = document.getElementById("dataTable");
@@ -1317,11 +1319,11 @@ function createTable() {
 }
 
 function drawGraph() {
-    
+
     var datapoints1 = [];
     for (let i = 1; i <= 4; i++) {
-        var tx = document.getElementById("d"+i+"2").firstChild.value;
-        var ty = document.getElementById("d"+i+"5").firstChild.value;
+        var tx = document.getElementById("d" + i + "2").firstChild.value;
+        var ty = document.getElementById("d" + i + "5").firstChild.value;
         datapoints1.push({ x: parseInt(tx), y: parseInt(ty) });
         graphline("l1", datapoints1, "x axis", "y-axis");
     }

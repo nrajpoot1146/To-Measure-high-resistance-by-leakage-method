@@ -14,6 +14,20 @@ body {
     min-width: 1230px;
 }
 
+#header-nav {
+    background-color: #7e0cf5;
+    color: white;
+    padding: 12px;
+    box-shadow: 0px 0px 10px #bbb;
+}
+input{
+    padding: 4px 20px;
+    letter-spacing: 2px;
+}
+.content-center{
+    justify-content: center;
+}
+
 .btn {
     width: 100%;
 }
@@ -129,18 +143,19 @@ body {
     font-family: 'terminalFont';
     src: url('font/Tifax-AJ7g.ttf');
 }
+
 @-webkit-keyframes moveup {
 
     0%,
     60%,
     100% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
     }
 
     25% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
     }
 }
 
@@ -149,13 +164,13 @@ body {
     0%,
     60%,
     100% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
     }
 
     25% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(1em);
     }
 }
 
@@ -164,13 +179,13 @@ body {
     0%,
     60%,
     100% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
     }
 
     25% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
     }
 }
 
@@ -179,16 +194,17 @@ body {
     0%,
     60%,
     100% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(0);
     }
 
     25% {
-         -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
-         transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
+        -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
+        transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
     }
 }
-#dataTable{
+
+#dataTable {
     position: absolute;
     bottom: 0;
     right: 0;
@@ -196,19 +212,25 @@ body {
     background-color: white;
     box-shadow: 0px -1px 10px #bbb;
 }
-table{
+
+table {
     width: 100%;
     background-color: white;
 }
-tr,td,th{
+
+tr,
+td,
+th {
     text-align: center;
     border: 1px solid #bbb;
     border-collapse: collapse;
 }
-th{
+
+th {
     padding: 10px 20px;
 }
-td input{
+
+td input {
     width: 100%;
     text-align: center;
 }
