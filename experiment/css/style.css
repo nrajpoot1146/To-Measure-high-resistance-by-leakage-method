@@ -11,6 +11,7 @@ body {
     user-select: none;
     /* Standard syntax */
     background-color: aliceblue;
+    min-width: 1230px;
 }
 
 .btn {
@@ -186,4 +187,28 @@ body {
          -webkit-transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
          transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg) translateZ(-1em);
     }
+}
+#dataTable{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    background-color: white;
+    box-shadow: 0px -1px 10px #bbb;
+}
+table{
+    width: 100%;
+    background-color: white;
+}
+tr,td,th{
+    text-align: center;
+    border: 1px solid #bbb;
+    border-collapse: collapse;
+}
+th{
+    padding: 10px 20px;
+}
+td input{
+    width: 100%;
+    text-align: center;
 }

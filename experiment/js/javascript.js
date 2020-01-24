@@ -51,6 +51,14 @@ var operationType = {
     START_SIMULATION: 0X14,
     STOP_SIMULATION: 0X15,
 
+    START_CHARGING: 0X31,
+    STOP_CHARGING: 0x41,
+    START_DISCHARGING: 0X32,
+    STOP_DISCHARGING: 0x42,
+    READ_DEFLACTION: 0X33,
+
+    DISCHARGE: 0X50,
+
     RESET: 0X21,
     UNDO: 0X22,
     REDO: 0X23
@@ -62,25 +70,26 @@ var level = {
 };
 
 var conMap = {
-    Z: ["GA", "CA", "RA", "BA", "K3A"],
+    Z: ["GA", "CA", "RA", "BA", "K2A"],
     RA: ["Z", "BA"],
     CA: ["Z"],
-    GA: ["Z", "K3A"],
+    GA: ["Z", "K2A"],
     BA: ["Z"],
-    K3A: ["GA", "Z"],
-    GB: ["K3I", "K4A"],
-    K4A: ["GB", "K3I"],
-    K4I: ["K1A", "K4", "K4A"],
-    K3I: ["GB", "K4A", "K3A", "K3"],
-    K1A: ["K4I", "K1I"],
-    K1I: ["CB", "K2I", "K1B", "K1A"],
-    K2I: ["CB", "K1I", "K2A", "K2"],
-    CB: ["K1I", "K2I"],
-    K2A: ["RB"],
-    RB: ["K2A"],
-    K1B: ["BB", "K1I"],
-    BB: ["K1B"]
-}
+    K2A: ["GA", "Z"],
+    GB: ["K2I", "K3A"],
+    K3A: ["GB", "K2I"],
+    K3I: ["K0A", "K3", "K3A"],
+    K2I: ["GB", "K3A", "K2A", "K2"],
+    K0A: ["K3I", "K0I"],
+    K0I: ["CB", "K1I", "K0B", "K0A"],
+    K1I: ["CB", "K0I", "K1A", "K1"],
+    CB: ["K0I", "K1I"],
+    K1A: ["RB"],
+    RB: ["K1A"],
+    K0B: ["BB", "K0I"],
+    BB: ["K0B"]
+};
+var previousKey = null;
 
 var point = function (canvasId, imageId, x, y, r, type, name, element) {
     this.name = name;
@@ -243,6 +252,7 @@ var TwoWayKey = function (x, y, name) {
             this.input.V = this.output.V;
         }
         canvas.draw();
+        previousKey = this.name;
     };
 };
 
@@ -302,6 +312,7 @@ var TapKey = function (x, y, name) {
         } else {
             this.input.V = this.output.V;
         }
+        previousKey = this.name;
         canvas.draw();
     };
 };
@@ -381,7 +392,7 @@ var Resistor = function (x, y, name) {
     this.x = x - (this.width - 20) / 2;
     this.y = y - this.height / 2;
 
-    this.R = 0;
+    this.R = 10;
     this.name = name;
     this.A = new point(canvas.id, null, this.x - 20, this.y + this.height / 2, 4, pointType.PASSIVE, "A", this);
     this.B = new point(canvas.id, null, this.x + 60, this.y + this.height / 2, 4, pointType.PASSIVE, "B", this);
@@ -425,7 +436,7 @@ var Galvanometer = function (x, y, name) {
     this.height = 30;
     this.x = x - this.width / 2;
     this.y = y - this.height / 2;
-    this.value = "00";
+    this.value = "0.00";
     this.maxValue = 60;
     this.minValue = -60;
     this.A = new point(canvas.id, null, this.x + 3, this.y + this.height / 2, 4, pointType.PASSIVE, "A", this);
@@ -446,7 +457,7 @@ var Galvanometer = function (x, y, name) {
 
         canvas.context.font = "24px digitalFont";
         canvas.context.fillStyle = "grey";
-        canvas.context.fillText(this.value, this.x + this.width / 2 - 12, this.y + this.height / 2 + 9);
+        canvas.context.fillText(this.value, this.x + this.width / 2 - 24, this.y + this.height / 2 + 9);
 
         canvas.context.font = "12px Arial";
         canvas.context.fillStyle = "black";
@@ -461,7 +472,7 @@ var Galvanometer = function (x, y, name) {
     }
     this.update = function (value) {
         //let value = this.A.V - this.B.V;
-        this.value = value;
+        this.value = parseFloat(value).toFixed(2);
         canvas.draw();
     }
     this.operate = function () {
@@ -498,9 +509,10 @@ var Condenser = function (x, y, name) {
     this.y = y - this.height / 2;
     this.r = 25;
 
-    this.R = 0;
+    this.R = .2;
     this.C = 30;
     this.V = 0;
+    this.Vtemp = 0;
 
     this.A = new point(canvas.id, null, this.x, this.y + this.height / 2, 4, pointType.ACTIVE_PASSIVE, "A", this);
     this.B = new point(canvas.id, null, this.x + 28, this.y + this.height / 2, 4, pointType.ACTIVE_PASSIVE, "B", this);
@@ -523,16 +535,21 @@ var Condenser = function (x, y, name) {
     this.isInside = function () {
 
     }
-    this.charge = function (t) {
-        if (this.A.V > this.B.V) {
-            let Vs = this.A.V - this.B.V;
-            this.V = Vs * Math.pow(2.7183, -(15 / (this.R * this.C)));
-        } else if (this.B.V > 0) {
-
-        }
+    this.charge = function (Vs, t, R) {
+        //Ilet Vs = this.A.V - this.B.V;
+        this.Vtemp = Vs * (1 - Math.pow(2.7183, -(t / ((this.R + R) * this.C))));
+        this.Vtemp = this.Vtemp > canvas.battery.V ? canvas.battery.V : this.Vtemp;
     }
-    this.discharge = function () {
-
+    this.discharge = function (t, R) {
+        this.V = this.V * Math.pow(2.7183, -(t / ((this.R + R) * this.C)));
+        this.V = this.V < 0 ? 0 : this.V;
+        //console.log(this.V);
+    }
+    this.update = function (flag) {
+        this.V = this.V + this.Vtemp;
+        this.V = this.V > canvas.battery.V ? canvas.battery.V : this.V;
+        this.V = this.V < 0 ? 0 : this.V;
+        this.Vtemp = 0;
     }
 };
 
@@ -601,10 +618,17 @@ var Canvas = function (id) {
                 buttons[i].setAttribute("disabled", "true");
             }
 
-            this.timeInterval = setInterval(this.run, 500);
+            for (let i = 0; i < startedButtons.length; i++) {
+                startedButtons[i].classList.remove("disabled");
+                startedButtons[i].removeAttribute("disabled");
+            }
+
+            //this.timeInterval = setInterval(this.run, 500);
             canvas.stopWatch.isDraw = true;
             terminal.update("Simulation Started");
             this.action = operationType.START_SIMULATION;
+        } else {
+            terminal.update("Circuit Not Completed.");
         }
     }
     this.stop = function () {
@@ -622,49 +646,62 @@ var Canvas = function (id) {
         clearInterval(this.timeInterval);
         canvas.stopWatch.isDraw = false;
         this.timeInterval = null;
+        for (let i = 0; i < startedButtons.length; i++) {
+            startedButtons[i].classList.add("disabled");
+            startedButtons[i].setAttribute("disabled", "true");
+        }
         //}
     }
 
     this.run = function () {
         if (canvas.twoWayKey.output == canvas.twoWayKey.outputA) {
-            //k1 A
+            //k0 A
             if (canvas.tapKey_3.output == canvas.tapKey_3.outputA) {
-                canvas.stopWatch.stop();
-                //K4 A
+                // canvas.stopWatch.stop();
+                //K3 A
                 if (canvas.tapKey_2.output == canvas.tapKey_2.outputA) {
-                    //K3 A
+                    //K2 A
                     canvas.condenser.V = 0;
                     canvas.galvanometer.update(canvas.condenser.V);
                 } else {
-                    //K3 B 
+                    //K2 B
+                    canvas.stopWatch.stop();
+                    canvas.condenser.update();
                     canvas.galvanometer.update(canvas.condenser.V);
                 }
             } else {
-                //K4 B
+                //K3 B
                 if (canvas.tapKey_1.output == canvas.tapKey_1.outputA) {
-                    //K2 A
+                    //K1 A
                     canvas.stopWatch.reStart();
+                    canvas.condenser.discharge(canvas.stopWatch.s, canvas.resistor.R);
+                    //discharge through leakage resistor timer start
+                } else {
+                    //K1 B
                     //discharge through leakage resistor
 
-                } else {
-                    //K2 B
-                    //discharge through leakage resistor
-                    canvas.stopWatch.stop();
+                    if (canvas.tapKey_2.output == canvas.tapKey_2.outputA) {
+
+                    } else {
+                        canvas.stopWatch.stop();
+                        canvas.condenser.update();
+                    }
                 }
             }
         } else {
-            //K1 B
+            //K0 B
             if (canvas.tapKey_1.output == canvas.tapKey_1.outputA) {
-                //K2 A
+                //K1 A
                 //charge with leakage resistor
+                canvas.stopWatch.reStart();
+                canvas.condenser.charge(canvas.battery.V, canvas.stopWatch.s, canvas.resistor.R);
 
             } else {
-                //K2 B
+                //K1 B
                 canvas.stopWatch.reStart();
-                canvas.condenser.V = canvas.battery.V;
+                canvas.condenser.charge(canvas.battery.V, canvas.stopWatch.s, 0);
             }
         }
-
     }
 
     this.isCorrect = function () {
@@ -702,6 +739,16 @@ var StopWatch = function (x, y) {
             this.time = (this.s < 10 ? "0" + this.s : this.s) + ":" + (this.ms < 10 ? "0" + this.ms : this.ms);
         else
             this.time = (this.s < 10 ? "0" + this.s : this.s) + " " + (this.ms < 10 ? "0" + this.ms : this.ms);
+
+        canvas.context.beginPath();
+
+        canvas.context.fillStyle = "#bbb";
+        canvas.context.fillRect(this.x - 160, this.y - 20, 300, 100);
+        canvas.context.fillStyle = "black";
+        canvas.context.lineWidth = "4";
+        canvas.context.rect(this.x - 160, this.y - 20, 300, 100);
+        canvas.context.stroke();
+        canvas.context.closePath();
         canvas.context.clearRect(this.x, this.y, this.width, this.height);
         canvas.context.beginPath();
         canvas.context.rect(this.x, this.y, this.width, this.height);
@@ -764,9 +811,17 @@ var StopWatch = function (x, y) {
 window.onload = function () {
     window.terminal = new Terminal();
     window.canvas = new this.Canvas("myCanvas");
-    window.buttons = this.document.getElementsByClassName("btn");
-    canvas.stopWatch = new this.StopWatch(1000, 35);
+    window.buttons = this.document.getElementsByClassName("stopped");
+    window.startedButtons = this.document.getElementsByClassName("started");
+
+    window.charging = this.document.getElementById("charging");
+    window.read = this.document.getElementById("read");
+    window.discharging = this.document.getElementById("discharging");
+    window.discharge = this.document.getElementById("discharge");
+
+    canvas.stopWatch = new this.StopWatch(180, 35);
     canvas.stop();
+    this.createTable();
     this.document.addEventListener("mousedown", function (e) {
         var tempPos = getMousePos(window.canvas.obj, e);
         update(tempPos.x, tempPos.y);
@@ -838,7 +893,9 @@ window.onload = function () {
             }
         }, false);
     }
-
+    document.getElementById("draw-graph").addEventListener("click",function(){
+        drawGraph();
+    },false);
     window.onkeypress = function (e) {
         switch (e.keyCode) {
             case 25:
@@ -852,13 +909,16 @@ window.onload = function () {
         }
     }
 
-    for (let i = 0; i < 8; i++) {
-        if (i == 5)
-            continue;
-        canvas.action = i;
-        this.mouseLeftDown(3, 3);
-        //canvas.action = this.operationType[i]
-    }
+    //draw all component already
+    // for (let i = 0; i < 8; i++) {
+    //     if (i == 5)
+    //         continue;
+    //     canvas.action = i;
+    //     this.mouseLeftDown(3, 3);
+    //     //canvas.action = this.operationType[i]
+    // }
+
+    this.init();
 
     document.getElementsByClassName("loader")[0].style.display = "none";
     canvas.element.push(new point(canvas.id, null, 220, 300, 8, pointType.PASSIVE, "Z", null));
@@ -880,13 +940,13 @@ function mouseLeftDown(x, y) {
             canvas.redoArray = [];
         } else if (canvas.action == operationType.DRAW_TWO_WAY_KEY) {
             if (!checkInstance(TwoWayKey)) {
-                canvas.twoWayKey = new TwoWayKey(640, 301, "K1");
+                canvas.twoWayKey = new TwoWayKey(640, 301, "K0");
                 canvas.element.push(canvas.twoWayKey);
                 canvas.redoArray = [];
             }
         } else if (canvas.action == operationType.DRAW_CELL) {
             if (!checkInstance(Cell)) {
-                canvas.battery = new Cell(448, 500, "B");
+                canvas.battery = new Cell(448, 450, "B");
                 canvas.element.push(canvas.battery);
                 canvas.redoArray = [];
             }
@@ -910,9 +970,9 @@ function mouseLeftDown(x, y) {
             }
         } else if (canvas.action == operationType.DRAW_TAPKEY) {
             if (!checkInstance(TapKey)) {
-                canvas.tapKey_1 = new TapKey(548, 365, "K2");
-                canvas.tapKey_2 = new TapKey(448, 217, "K3");
-                canvas.tapKey_3 = new TapKey(550, 150, "K4");
+                canvas.tapKey_1 = new TapKey(548, 365, "K1");
+                canvas.tapKey_2 = new TapKey(448, 217, "K2");
+                canvas.tapKey_3 = new TapKey(550, 150, "K3");
                 canvas.element.push(canvas.tapKey_1);
                 canvas.element.push(canvas.tapKey_2);
                 canvas.element.push(canvas.tapKey_3);
@@ -927,13 +987,13 @@ function mouseLeftDown(x, y) {
             }
         }
 
-        if (canvas.action == operationType.START_SIMULATION) {
-            if (canvas.currentElement instanceof TwoWayKey) {
-                canvas.currentElement.click();
-            } else if (canvas.currentElement instanceof TapKey) {
-                canvas.currentElement.click();
-            }
-        }
+        // if (canvas.action == operationType.START_SIMULATION) {
+        //     if (canvas.currentElement instanceof TwoWayKey) {
+        //         canvas.currentElement.click();
+        //     } else if (canvas.currentElement instanceof TapKey) {
+        //         canvas.currentElement.click();
+        //     }
+        // }
     }
     console.log(canvas.element);
     canvas.draw();
@@ -1147,4 +1207,122 @@ function poinHoverCircle(x, y, r) {
     canvas.context.stroke();
     canvas.context.closePath();
     document.getElementsByTagName("body")[0].style.cursor = "pointer";
+}
+
+function init() {
+    window.charging.addEventListener("click", function (e) {
+        if (operationType[e.target.getAttribute("vlab-action")] == operationType.START_CHARGING) {
+            e.target.setAttribute("vlab-action", "STOP_CHARGING");
+            e.target.innerHTML = "Stop Capacitor Charging";
+            e.target.classList.remove("btn-success");
+            e.target.classList.add("btn-danger");
+            window.read.classList.add("disabled");
+            window.read.setAttribute("disabled", "true");
+            window.discharging.classList.add("disabled");
+            window.discharging.setAttribute("disabled", "true");
+            window.discharge.classList.add("disabled");
+            window.discharge.setAttribute("disabled", "true");
+
+            canvas.stopWatch.reStart();
+            canvas.twoWayKey.output = canvas.twoWayKey.outputB;
+            canvas.tapKey_1.output = canvas.tapKey_1.outputB;
+            canvas.tapKey_2.output = canvas.tapKey_2.outputB;
+            canvas.tapKey_3.output = canvas.tapKey_3.outputB;
+            canvas.draw();
+        } else {
+            e.target.setAttribute("vlab-action", "START_CHARGING");
+            e.target.innerHTML = "Start Capacitor Charging";
+            e.target.classList.remove("btn-danger");
+            e.target.classList.add("btn-success");
+            window.read.classList.remove("disabled");
+            window.read.removeAttribute("disabled");
+            window.discharging.classList.remove("disabled");
+            window.discharging.removeAttribute("disabled");
+            window.discharge.classList.remove("disabled");
+            window.discharge.removeAttribute("disabled");
+
+            canvas.stopWatch.stop();
+            canvas.condenser.charge(canvas.battery.V, canvas.stopWatch.s, 0);
+            canvas.condenser.update();
+            canvas.twoWayKey.output = canvas.twoWayKey.outputA;
+            canvas.draw();
+        }
+    }, false);
+    window.read.addEventListener("click", function () {
+        canvas.galvanometer.update(canvas.condenser.V);
+        canvas.twoWayKey.output = canvas.twoWayKey.outputA;
+        canvas.tapKey_1.output = canvas.tapKey_1.outputB;
+        canvas.tapKey_2.output = canvas.tapKey_2.outputB;
+        canvas.tapKey_3.output = canvas.tapKey_3.outputA;
+        canvas.draw();
+    }, false);
+    window.discharging.addEventListener("click", function (e) {
+        if (operationType[e.target.getAttribute("vlab-action")] == operationType.START_DISCHARGING) {
+            e.target.setAttribute("vlab-action", "STOP_DISCHARGING");
+            e.target.innerHTML = "Stop Capacitor Disharging";
+            e.target.classList.remove("btn-success");
+            e.target.classList.add("btn-danger");
+            window.read.classList.add("disabled");
+            window.read.setAttribute("disabled", "true");
+            window.charging.classList.add("disabled");
+            window.charging.setAttribute("disabled", "true");
+            window.discharge.classList.add("disabled");
+            window.discharge.setAttribute("disabled", "true");
+
+            canvas.stopWatch.reStart();
+            canvas.twoWayKey.output = canvas.twoWayKey.outputA;
+            canvas.tapKey_1.output = canvas.tapKey_1.outputA;
+            canvas.tapKey_2.output = canvas.tapKey_2.outputB;
+            canvas.tapKey_3.output = canvas.tapKey_3.outputB;
+            canvas.draw();
+        } else {
+            e.target.setAttribute("vlab-action", "START_DISCHARGING");
+            e.target.innerHTML = "Start Capacitor Disharging";
+            e.target.classList.remove("btn-danger");
+            e.target.classList.add("btn-success");
+            window.read.classList.remove("disabled");
+            window.read.removeAttribute("disabled");
+            window.charging.classList.remove("disabled");
+            window.charging.removeAttribute("disabled");
+            window.discharge.classList.remove("disabled");
+            window.discharge.removeAttribute("disabled");
+
+            canvas.stopWatch.stop();
+            canvas.condenser.discharge(canvas.stopWatch.s, canvas.resistor.R);
+            canvas.tapKey_1.output = canvas.tapKey_1.outputB;
+            canvas.draw();
+        }
+    }, false);
+    window.discharge.addEventListener("click", function () {
+        canvas.condenser.V = 0;
+        canvas.twoWayKey.output = canvas.twoWayKey.outputA;
+        canvas.tapKey_1.output = canvas.tapKey_1.outputB;
+        canvas.tapKey_2.output = canvas.tapKey_2.outputA;
+        canvas.tapKey_3.output = canvas.tapKey_3.outputA;
+        canvas.galvanometer.update(canvas.condenser.V);
+        canvas.draw();
+    }, false);
+}
+
+function createTable() {
+    var str = "<h3 class='text-center'>Datatable</h3>"; 
+    str += "<table>";
+    str += "<tr><th>Sr No.</th><th>First Deflection<br>(&theta;<sub>0</sub>)</th><th>Time <br>(t)</th><th>Deflection After Discharging<br>(&theta;<sub>t</sub>)<br> </th><th>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th><th>log<sub>10</sub>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th></tr>";
+    var table = document.getElementById("dataTable");
+    for (i = 1; i <= 4; i++) {
+        str += '<tr><td>' + i + '.</td><td id = "d' + i + '1"><input type="text"></td><td id = "d' + i + '2"><input type="text"></td><td id = "d' + i + '3"><input type="text"></td><td id = "d' + i + '4"><input type="text"></td><td id = "d' + i + '5"><input type="text"></td></tr>';
+    }
+    str += "</table>";
+    table.innerHTML = str;
+}
+
+function drawGraph() {
+    
+    var datapoints1 = [];
+    for (let i = 1; i <= 4; i++) {
+        var tx = document.getElementById("d"+i+"2").firstChild.value;
+        var ty = document.getElementById("d"+i+"5").firstChild.value;
+        datapoints1.push({ x: parseInt(tx), y: parseInt(ty) });
+        graphline("l1", datapoints1, "x axis", "y-axis");
+    }
 }
