@@ -7,8 +7,8 @@
     <script src="js/graph.ob.js"></script>
     <script src="js/graph_line_use.ob.js"></script>
     <link rel="stylesheet" href="css/bootstrap.min.css">
-    <script src="js/javascript.js" type="text/javascript"></script>
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <script src="js/javascript.js" type="text/javascript"></script>
     <title>Measure High Resistance by Leakage Method</title>
 </head>
 
@@ -91,7 +91,7 @@
 
                 </div>
             </div>
-            <div class="col-md-8 col-xl-8 p-0" style="border: 0px inset green; box-shadow: 0px 0px 20px #bbb;">
+            <div class="col-md-8 col-xl-8 p-0" style="border: 0px inset green; box-shadow: 0px 0px 20px #bbb; max-height: 730px;">
                 <canvas id="myCanvas" style="background-image: url(images/back.svg); background-size: 100px 100px;">
 
                 </canvas>
@@ -128,7 +128,7 @@
                 </div>
                 <div class="row">
                     <div class="col mt-2">
-                        <button class="btn btn-success started" id="draw-graph">Draw Graph</button>
+                        <button class="btn btn-success" id="draw-graph">Draw Graph</button>
 
                     </div>
                 </div>
@@ -137,11 +137,11 @@
                         <div style="background-color: white; box-shadow: 0px 0px 10px #bbb;" class="p-3 mt-3">
                             <h3 class="text-center"><b>Formulas :</b></h3>
                             Capacitor Charging :
-                            <img src="images/char.png"><br>
+                            <img src="images/char.png" width="100%"><br>
                             Capacitor Discharging :
-                            <img src="images/dis.png"><br>
+                            <img src="images/dis.png" width="100%"><br>
                             High Resistance :
-                            <img src="images/resist.png"><br>
+                            <img src="images/resist.png" width="100%"><br>
                         </div>
                     </div>
                 </div>
@@ -162,9 +162,9 @@
     </div>
     <div class="loader">
         <div style=" position: absolute; top: 42%; left: 48.5%; transform: translate(-50%,-50%);">
-            <i class='layer'></i>
-            <i class='layer'></i>
-            <i class='layer'></i>
+            <i class="layer"></i>
+            <i class="layer"></i>
+            <i class="layer"></i>
         </div>
         <div style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-20%);">Loading....
         </div>
