@@ -1309,7 +1309,7 @@ function init() {
 function createTable() {
     var str = "<h3 class='text-center'>Datatable</h3>";
     str += "<table>";
-    str += "<tr><th>Sr No.</th><th>First Deflection<br>(&theta;<sub>0</sub>)</th><th>Time <br>(t)</th><th>Deflection After Discharging<br>(&theta;<sub>t</sub>)<br> </th><th>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th><th>log<sub>10</sub>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th></tr>";
+    str += "<tr><th>Sr No.</th><th>First Deflection<br>(&theta;<sub>0</sub>)</th><th>Time (t)<br>(s)</th><th>Deflection After Discharging<br>(&theta;<sub>t</sub>)<br> </th><th>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th><th>log<sub>10</sub>(&theta;<sub>0</sub>/&theta;<sub>t</sub>)</th></tr>";
     var table = document.getElementById("dataTable");
     for (i = 1; i <= 4; i++) {
         str += '<tr><td>' + i + '.</td><td id = "d' + i + '1"><input type="text"></td><td id = "d' + i + '2"><input type="text"></td><td id = "d' + i + '3"><input type="text"></td><td id = "d' + i + '4"><input type="text"></td><td id = "d' + i + '5"><input type="text"></td></tr>';
@@ -1325,6 +1325,6 @@ function drawGraph() {
         var tx = document.getElementById("d" + i + "2").firstChild.value;
         var ty = document.getElementById("d" + i + "5").firstChild.value;
         datapoints1.push({ x: parseInt(tx), y: parseInt(ty) });
-        graphline("l1", datapoints1, "x axis", "y-axis");
+        graphline("l1", datapoints1, "Time(t-s)", "log(θ0/θt)");
     }
 }
