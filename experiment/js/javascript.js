@@ -394,7 +394,7 @@ var Resistor = function (x, y, name) {
     this.x = x - (this.width - 20) / 2;
     this.y = y - this.height / 2;
 
-    this.R = 10;
+    this.R = 8*Math.pow(10,6);
     this.name = name;
     this.A = new point(canvas.id, null, this.x - 20, this.y + this.height / 2, 4, pointType.PASSIVE, "A", this);
     this.B = new point(canvas.id, null, this.x + 60, this.y + this.height / 2, 4, pointType.PASSIVE, "B", this);
@@ -512,7 +512,7 @@ var Condenser = function (x, y, name) {
     this.r = 25;
 
     this.R = .2;
-    this.C = 30;
+    this.C = .8*Math.pow(10,-6);
     this.V = 0;
     this.Vtemp = 0;
 
@@ -559,8 +559,8 @@ var Canvas = function (id) {
     this.id = id;
     this.obj = document.getElementById(this.id);
     this.parent = this.obj.parentElement;
-    this.width = this.parent.clientWidth;
-    this.height = this.parent.clientHeight;
+    this.width = 700;//this.parent.clientWidth;
+    this.height = 450;//this.parent.clientHeight;
     this.obj.setAttribute("width", this.width);
     this.obj.setAttribute("height", this.height);
     this.context = this.obj.getContext('2d');
@@ -726,7 +726,7 @@ var Canvas = function (id) {
 };
 
 var StopWatch = function (x, y) {
-    this.width = 100;
+    this.width = 90;
     this.height = 40;
     this.x = x;
     this.y = y;
@@ -745,10 +745,11 @@ var StopWatch = function (x, y) {
         canvas.context.beginPath();
 
         canvas.context.fillStyle = "#bbb";
-        canvas.context.fillRect(this.x - 160, this.y - 20, 300, 100);
+        canvas.context.fillRect(this.x - 160, this.y - 20, 280, 100);
         canvas.context.fillStyle = "black";
         canvas.context.lineWidth = "4";
-        canvas.context.rect(this.x - 160, this.y - 20, 300, 100);
+        canvas.context.rect(this.x - 160, this.y - 20, 280, 100);
+        canvas.context.strokeStyle = "black";
         canvas.context.stroke();
         canvas.context.closePath();
         canvas.context.clearRect(this.x, this.y, this.width, this.height);
@@ -821,7 +822,7 @@ window.onload = function () {
     window.discharging = this.document.getElementById("discharging");
     window.discharge = this.document.getElementById("discharge");
 
-    canvas.stopWatch = new this.StopWatch(180, 35);
+    canvas.stopWatch = new this.StopWatch(170, 35);
     canvas.stop();
     this.createTable();
     this.document.addEventListener("mousedown", function (e) {
@@ -928,8 +929,8 @@ window.onload = function () {
 };
 
 window.onresize = function () {
-    canvas.onResize();
-    canvas.draw();
+    //canvas.onResize();
+    //canvas.draw();
 }
 
 function mouseLeftDown(x, y) {
@@ -948,13 +949,13 @@ function mouseLeftDown(x, y) {
             }
         } else if (canvas.action == operationType.DRAW_CELL) {
             if (!checkInstance(Cell)) {
-                canvas.battery = new Cell(448, 450, "B");
+                canvas.battery = new Cell(448, 400, "B");
                 canvas.element.push(canvas.battery);
                 canvas.redoArray = [];
             }
         } else if (canvas.action == operationType.DRAW_RESISTOR) {
             if (!checkInstance(Resistor)) {
-                canvas.resistor = new Resistor(448, 380, "R");
+                canvas.resistor = new Resistor(448, 350, "R");
                 canvas.element.push(canvas.resistor);
                 canvas.redoArray = [];
             }
@@ -1327,4 +1328,11 @@ function drawGraph() {
         datapoints1.push({ x: parseInt(tx), y: parseInt(ty) });
         graphline("l1", datapoints1, "Time(t-s)", "log(θ0/θt)");
     }
+}
+
+function varify(e) {
+    var res = parseFloat(document.getElementById("result").value);
+    var perError = 100 * (canvas.resistor.R - res) / canvas.resistor.R;
+    alert("Percentage Error : "+perError+"%");
+    terminal.update("Percentage Error : "+perError+"%");
 }
